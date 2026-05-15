@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tone Analyser</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #F9FAFB;
+      color: #111827;
+      min-height: 100vh;
+      padding: 48px 16px;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Header */
+    .header { margin-bottom: 4px; }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 0.875rem;
+      color: #6B7280;
+    }
+
+    /* Form fields */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      color: #111827;
+      background: #fff;
+      outline: none;
+      resize: vertical;
+      min-height: 200px;
+      line-height: 1.6;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    textarea:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    #charCount {
+      font-size: 0.8rem;
+      color: #9CA3AF;
+      text-align: right;
+    }
+
+    /* Buttons */
+    #analyseBtn {
+      width: 100%;
+      padding: 12px;
+      background: #2563EB;
+      color: #fff;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    #analyseBtn:hover:not(:disabled) { background: #1D4ED8; }
+    #analyseBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    #clearBtn {
+      padding: 9px 20px;
+      background: #F3F4F6;
+      color: #374151;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: 1px solid #D1D5DB;
+      border-radius: 8px;
+      cursor: pointer;
+      align-self: flex-start;
+      transition: background 0.15s;
+    }
+    #clearBtn:hover { background: #E5E7EB; }
+
+    /* Spinner */
+    #spinner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #6B7280;
+      font-size: 0.875rem;
+    }
+    .spin-ring {
+      width: 20px;
+      height: 20px;
+      border: 3px solid #D1D5DB;
+      border-top-color: #2563EB;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Results */
+    #results {
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      border-radius: 8px;
+      padding: 24px;
+      animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-section { margin-bottom: 20px; }
+    .result-section:last-child { margin-bottom: 0; }
+
+    .result-section h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #1D4ED8;
+      margin-bottom: 8px;
+    }
+
+    .result-section p,
+    .result-section ul {
+      font-size: 0.9375rem;
+      color: #1E3A8A;
+      line-height: 1.7;
+    }
+
+    .result-section ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .result-section ul li::before {
+      content: "•";
+      color: #2563EB;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+
+    /* Error */
+    #error {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 8px;
+      padding: 14px 18px;
+      color: #991B1B;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    /* Validation */
+    #validation {
+      color: #DC2626;
+      font-size: 0.8125rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="header">
+      <h1>Tone Analyser</h1>
+      <p class="subtitle">Powered by Claude — get instant writing feedback</p>
+    </div>
+
+    <div class="field">
+      <label for="writing">Paste your writing here</label>
+      <textarea id="writing"
+        placeholder="Paste an email, message, or any writing here..."
+        oninput="updateCharCount()"></textarea>
+      <span id="charCount">0 characters</span>
+    </div>
+
+    <p id="validation" hidden></p>
+
+    <button id="analyseBtn" onclick="analyseTone()">Analyse Tone</button>
+
+    <div id="spinner" hidden>
+      <div class="spin-ring"></div>
+      <span>Analysing your writing…</span>
+    </div>
+
+    <div id="results" hidden></div>
+    <div id="error" hidden></div>
+
+    <button id="clearBtn" hidden onclick="clearAll()">Clear &amp; Start Again</button>
+
+  </div>
+
+  <script>
+    async function analyseTone() {
+      const writing = document.getElementById("writing").value.trim();
+      const validation = document.getElementById("validation");
+
+      validation.hidden = true;
+
+      if (!writing) {
+        validation.textContent = "Please paste some text to analyse.";
+        validation.hidden = false;
+        return;
+      }
+
+      setLoading(true);
+      document.getElementById("results").hidden = true;
+      document.getElementById("error").hidden = true;
+
+      try {
+        const response = await fetch("/api/analyse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: writing })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "API error: " + response.status);
+        }
+
+        const content = data.result;
+
+        const resultsEl = document.getElementById("results");
+        resultsEl.innerHTML = formatResults(content);
+        resultsEl.hidden = false;
+        document.getElementById("clearBtn").hidden = false;
+
+      } catch (err) {
+        const errorBox = document.getElementById("error");
+        errorBox.textContent = err.message || "Something went wrong. Please try again.";
+        errorBox.hidden = false;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function formatResults(text) {
+      // Split on the three known section headings
+      const sectionPattern = /\n?(OVERALL TONE|WHAT'S WORKING|WHAT TO CONSIDER)\n?/g;
+      const parts = text.split(sectionPattern).filter(s => s.trim());
+
+      const headings = ["OVERALL TONE", "WHAT'S WORKING", "WHAT TO CONSIDER"];
+      let html = "";
+      let i = 0;
+
+      while (i < parts.length) {
+        const part = parts[i].trim();
+        if (headings.includes(part)) {
+          const heading = part;
+          const body = (parts[i + 1] || "").trim();
+          i += 2;
+
+          const lines = body.split("\n").map(l => l.trim()).filter(Boolean);
+          const isBulletSection = heading !== "OVERALL TONE";
+
+          let bodyHtml;
+          if (isBulletSection) {
+            const items = lines
+              .map(l => l.replace(/^[-•*]\s*/, ""))
+              .filter(Boolean)
+              .map(l => `<li>${escapeHtml(l)}</li>`)
+              .join("");
+            bodyHtml = `<ul>${items}</ul>`;
+          } else {
+            bodyHtml = `<p>${escapeHtml(lines.join(" "))}</p>`;
+          }
+
+          html += `<div class="result-section"><h3>${escapeHtml(heading)}</h3>${bodyHtml}</div>`;
+        } else {
+          i++;
+        }
+      }
+
+      // Fallback: if parsing found nothing, show raw text
+      if (!html) {
+        html = `<div class="result-section"><p style="white-space:pre-wrap">${escapeHtml(text)}</p></div>`;
+      }
+
+      return html;
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function updateCharCount() {
+      const len = document.getElementById("writing").value.length;
+      document.getElementById("charCount").textContent =
+        len.toLocaleString() + " character" + (len === 1 ? "" : "s");
+    }
+
+    function clearAll() {
+      document.getElementById("writing").value = "";
+      updateCharCount();
+      document.getElementById("results").innerHTML = "";
+      document.getElementById("results").hidden = true;
+      document.getElementById("error").textContent = "";
+      document.getElementById("error").hidden = true;
+      document.getElementById("validation").hidden = true;
+      document.getElementById("clearBtn").hidden = true;
+    }
+
+    function setLoading(isLoading) {
+      document.getElementById("spinner").hidden = !isLoading;
+      document.getElementById("analyseBtn").disabled = isLoading;
+    }
+  </script>
+</body>
+</html>
