@@ -2,7 +2,7 @@
 // viewer's own Claude account (artifact `sample` capability) instead of a server with an API key.
 import { analyzeFood, coachRequest, extractLab, healthReview, parseWorkout, testPlan, type Ask } from "@/lib/handlers";
 import { capability, type SampleFn } from "./claude";
-import { dataUrlBytes, pdfToImages } from "./pdf";
+import { dataUrlBytes, pdfToImages, pdfToText } from "./pdf";
 import { storageMode } from "./store";
 
 export const PASSCODE_KEY = "soul-health:passcode";
@@ -15,7 +15,8 @@ const ERRORS: Record<string, string> = {
   rate_limited: "Claude is busy or your usage limit was reached — try again in a little while.",
   session_expired: "Please sign in to Claude again.",
   image_rejected: "That image couldn't be read — try a different photo (JPG or PNG).",
-  images_unavailable: "Photos can't be sent to Claude in this view — try the Claude app or claude.ai.",
+  images_unavailable:
+    "This Claude view can't read photos yet. Upload the lab's PDF instead, describe food in words, or open the link in a web browser on claude.ai.",
   refused: "Claude couldn't help with that input — try rephrasing.",
   prompt_too_large: "That was too much to send at once — try fewer pages.",
   invalid_json: "Claude's answer came back in the wrong format — please try again.",
@@ -54,11 +55,11 @@ const ask: Ask = async (req) => {
   }
 };
 
+/** How many images one call may carry here (0 = this view can't send images, e.g. some mobile apps). */
 async function maxImages(): Promise<number> {
   const s = await sampler();
   const l = await s.limits().catch(() => null);
-  if (!l?.images) throw new Error(ERRORS.images_unavailable);
-  return Math.max(1, l.images.maxCount);
+  return l?.images ? Math.max(1, l.images.maxCount) : 0;
 }
 
 export async function postJSON<T>(url: string, body: Record<string, unknown>): Promise<T> {
@@ -67,14 +68,17 @@ export async function postJSON<T>(url: string, body: Record<string, unknown>): P
     case "/api/labs/extract": {
       const file = str(body.file);
       const limit = await maxImages();
-      let images: string[];
       if (file.startsWith("data:application/pdf")) {
-        const { images: pages, pages: total } = await pdfToImages(file, Math.min(limit, 8));
-        if (!pages.length) throw new Error("This PDF has no pages.");
-        if (total > pages.length) console.warn(`Only the first ${pages.length} of ${total} pages were read`);
-        images = pages;
-      } else images = [file];
-      return (await extractLab(ask, { images })) as T;
+        // Digital PDFs (most lab reports) carry real text: read it directly, no image support needed.
+        const { text } = await pdfToText(file);
+        if (text.replace(/--- page \d+ ---/g, "").replace(/\s+/g, "").length > 30) return (await extractLab(ask, { reportText: text })) as T;
+        if (!limit) throw new Error("This PDF is a scanned picture, and this Claude view can't read pictures yet. Open the link in a web browser on claude.ai, or ask your lab for the digital PDF.");
+        const { images } = await pdfToImages(file, Math.min(limit, 8));
+        if (!images.length) throw new Error("This PDF has no pages.");
+        return (await extractLab(ask, { images })) as T;
+      }
+      if (!limit) throw new Error(ERRORS.images_unavailable);
+      return (await extractLab(ask, { images: [file] })) as T;
     }
     case "/api/review":
       return (await healthReview(ask, str(body.context), "Claude (your account)")) as T;

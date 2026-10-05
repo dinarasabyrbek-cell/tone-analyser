@@ -39,10 +39,12 @@ const parse = <T>(schema: { safeParse: (v: unknown) => { success: true; data: T 
   return r.data;
 };
 
-export async function extractLab(ask: Ask, input: { images?: string[]; pdf?: { name: string; dataUrl: string } }) {
+export async function extractLab(ask: Ask, input: { images?: string[]; pdf?: { name: string; dataUrl: string }; reportText?: string }) {
   const text = await ask({
     system: EXTRACT_PROMPT,
-    text: "Extract every numeric lab result from this report" + (input.images && input.images.length > 1 ? ` (${input.images.length} pages, in order).` : "."),
+    text: input.reportText
+      ? "Extract every numeric lab result from this report. It is the text of a PDF; each line is one row of the page, cells separated by tabs.\n\n" + input.reportText.slice(0, 80000)
+      : "Extract every numeric lab result from this report" + (input.images && input.images.length > 1 ? ` (${input.images.length} pages, in order).` : "."),
     images: input.images,
     pdf: input.pdf,
     tier: "default",
