@@ -1,4 +1,5 @@
 // Entry for the claude.ai artifact build: same pages as the Next.js app, hash-routed in one page.
+import "./polyfills";
 import { useEffect, useState, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 import BodyPage from "@/app/body/page";

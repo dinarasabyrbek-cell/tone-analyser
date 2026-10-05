@@ -1,4 +1,5 @@
 // Renders PDF pages to JPEG data URLs in the browser (Claude in the artifact reads images, not PDFs).
+import "./polyfills";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import * as worker from "pdfjs-dist/legacy/build/pdf.worker.mjs";
 
