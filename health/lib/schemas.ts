@@ -34,6 +34,7 @@ export const ExtractionSchema = z.object({
       ref_low: looseNumber.catch(null),
       ref_high: looseNumber.catch(null),
       flag: z.enum(["low", "high", "normal", "unknown"]).catch("unknown"),
+      previous: arr(z.object({ date: str, value: looseNumber })),
     })
   ),
 });

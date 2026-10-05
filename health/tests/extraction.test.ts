@@ -73,3 +73,18 @@ describe("test plan", () => {
     expect(addMonths("2023-11-15", 3)).toBe("2024-02-15");
   });
 });
+
+it("turns history columns into earlier dated results", async () => {
+  const { extractionHistory } = await import("@/lib/normalize");
+  const ex = ExtractionSchema.parse({
+    taken_at: "16.09.2026",
+    results: [
+      { name: "Гемоглобин (HGB)", value: 62, unit: "г/л", ref_low: 112, ref_high: 150, previous: [{ date: "07.03.2025", value: 90 }, { date: "02.10.2024", value: 105 }] },
+      { name: "Тромбоциты (PLT)", value: 257, unit: "x10^9/L", ref_low: 150, ref_high: 400, previous: [{ date: "07.03.2025", value: "298" }] },
+    ],
+  });
+  const h = extractionHistory(ex, "2026-09-16");
+  expect(h.map((g) => g.taken_at)).toEqual(["2025-03-07", "2024-10-02"]);
+  expect(h[0].results.map((r) => [r.marker_key, r.value, r.flag])).toEqual([["hemoglobin", 90, "low"], ["platelets", 298, "normal"]]);
+  expect(h[1].results[0]).toMatchObject({ marker_key: "hemoglobin", value: 105, value_std: 10.5, flag: "low" });
+});

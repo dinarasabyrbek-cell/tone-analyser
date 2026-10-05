@@ -20,7 +20,8 @@ Return ONLY a JSON object, no prose:
   "notes": "one short sentence about anything unusual (e.g. 'Page 2 is cut off'), or empty string",
   "results": [
     { "marker_key": "one of the keys below or null", "name": "marker name in English", "value": 5.4, "unit": "mmol/L",
-      "ref_low": 3.9, "ref_high": 6.1, "flag": "low|high|normal|unknown" }
+      "ref_low": 3.9, "ref_high": 6.1, "flag": "low|high|normal|unknown",
+      "previous": [ { "date": "YYYY-MM-DD", "value": 5.1 } ] }
   ]
 }
 
@@ -30,6 +31,8 @@ Rules:
 - Write units in ASCII: umol/L, mmol/L, nmol/L, pmol/L, g/L, g/dL, mg/dL, ng/mL, pg/mL, ug/L, U/L, IU/mL, mIU/L, uIU/mL, %, x10^9/L, x10^12/L, fL, mm/h.
 - Copy the lab's own reference range into ref_low/ref_high (null for a missing side, e.g. "< 5.2" → ref_low null, ref_high 5.2).
 - flag: compare value with the lab's range; "unknown" if no range.
+- previous: some reports print EARLIER results of the same test beside the current one (extra columns with their own dates).
+  List each as {date, value} in the same unit; use [] when the report shows none. Never put earlier values in "value".
 - marker_key: map to the closest key from this list when it is clearly the same test, otherwise null:
 ${MARKER_KEYS}`;
 

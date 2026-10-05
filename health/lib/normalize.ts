@@ -54,6 +54,23 @@ export function extractionToResults(ex: Extraction): NewResult[] {
   return out;
 }
 
+/** Earlier results printed on the same report (history columns), grouped into one result list per date. */
+export function extractionHistory(ex: Extraction, mainDate: string): { taken_at: string; results: NewResult[] }[] {
+  const byDate = new Map<string, NewResult[]>();
+  for (const r of ex.results) {
+    for (const p of r.previous ?? []) {
+      const date = normalizeDate(p.date);
+      if (!date || date === mainDate || p.value == null) continue;
+      const row = finalizeRow({ marker_key: r.marker_key, raw_name: r.name, value: p.value, unit: r.unit, ref_low: r.ref_low, ref_high: r.ref_high });
+      if (!row) continue;
+      const list = byDate.get(date) ?? [];
+      if (!list.some((x) => x.marker_key === row.marker_key)) list.push(row);
+      byDate.set(date, list);
+    }
+  }
+  return [...byDate].map(([taken_at, results]) => ({ taken_at, results })).sort((a, b) => b.taken_at.localeCompare(a.taken_at));
+}
+
 /** Accepts YYYY-MM-DD, DD.MM.YYYY, DD/MM/YYYY; returns YYYY-MM-DD or "" */
 export function normalizeDate(s: string): string {
   const t = s.trim();

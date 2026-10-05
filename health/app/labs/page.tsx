@@ -15,6 +15,7 @@ interface Extracted {
   lab_name: string;
   notes: string;
   results: NewResult[];
+  earlier?: { taken_at: string; results: NewResult[] }[];
 }
 
 type Job = { name: string; state: "reading" | "done" | "error"; message?: string; id?: string };
@@ -70,7 +71,15 @@ export default function LabsPage() {
           },
           ex.results
         );
-        update({ state: "done", id, message: `${ex.results.length} results found` });
+        // Earlier results printed on the same report become their own dated reports, so trends start right away
+        for (const e of ex.earlier ?? []) {
+          await store.createReport(
+            { taken_at: e.taken_at, lab_name: ex.lab_name, file_name: f.name, file_path: null, status: "saved", ai_notes: `Earlier results copied from the history columns of the ${ex.taken_at || "uploaded"} report. Open to check them.` },
+            e.results
+          );
+        }
+        const extra = ex.earlier?.length ? ` + ${ex.earlier.length} earlier date${ex.earlier.length > 1 ? "s" : ""}` : "";
+        update({ state: "done", id, message: `${ex.results.length} results found${extra}` });
       } catch (e) {
         update({ state: "error", message: (e as Error).message });
       }

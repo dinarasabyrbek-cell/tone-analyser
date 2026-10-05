@@ -2,7 +2,7 @@
 // and the claude.ai artifact build (the viewer's own Claude account via `sample`).
 import { MUSCLE_IDS } from "./anatomy";
 import { extractJson } from "./json";
-import { extractionToResults, normalizeDate } from "./normalize";
+import { extractionHistory, extractionToResults, normalizeDate } from "./normalize";
 import { COACH_PROMPT, EXTRACT_PROMPT, FOOD_PROMPTS, PLAN_PROMPT, REVIEW_PROMPT, WORKOUT_PROMPT } from "./prompts";
 import { ExtractionSchema, MealSchema, MenuSchema, PlanSchema, ReceiptSchema, ReviewSchema, WorkoutSchema } from "./schemas";
 
@@ -54,7 +54,8 @@ export async function extractLab(ask: Ask, input: { images?: string[]; pdf?: { n
   const data = parse(ExtractionSchema, text, "Could not read results from this file. Try a clearer photo or the original PDF.");
   const results = extractionToResults(data);
   if (!results.length) throw new HandlerError("No numeric lab results were found in this file.");
-  return { taken_at: normalizeDate(data.taken_at), lab_name: data.lab_name, notes: data.notes, results };
+  const taken_at = normalizeDate(data.taken_at);
+  return { taken_at, lab_name: data.lab_name, notes: data.notes, results, earlier: extractionHistory(data, taken_at) };
 }
 
 export async function healthReview(ask: Ask, context: string, model = "") {
