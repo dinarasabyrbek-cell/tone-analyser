@@ -41,6 +41,10 @@ export async function postStream(url: string, body: unknown, onText: (full: stri
 export interface AppStatus {
   ai: boolean;
   cloud: boolean;
+  /** claude.ai build: where data lives */
+  storage?: "account" | "browser";
+  /** shown when ai is false */
+  aiHint?: string;
   passcode: boolean;
   models: { fast: string; deep: string };
 }

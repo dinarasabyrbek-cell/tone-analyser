@@ -59,16 +59,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh flex-col">
       {status && !status.cloud && (
         <div className="bg-kombu px-4 py-1.5 text-center text-[11px] text-cream/85 print:hidden">
-          Private local mode — your data stays on this device. Use Profile → Backup to keep a copy.
+          {status.storage === "account"
+            ? "Private — saved to your Claude account, visible only to you."
+            : "Private local mode — your data stays on this device. Use Profile → Backup to keep a copy."}
         </div>
       )}
       {status && !status.ai && (
         <div className="bg-alert-100 px-4 py-1.5 text-center text-[11px] text-alert print:hidden">
-          AI is not connected yet — add OPENROUTER_API_KEY on the server to enable analysis.
+          {status.aiHint ?? "AI is not connected yet — add OPENROUTER_API_KEY on the server to enable analysis."}
         </div>
       )}
 
-      <header className="sticky top-0 z-30 px-3 pt-3 sm:px-6 print:hidden">
+      <header className="sticky z-30 px-3 pt-3 sm:px-6 print:hidden" style={{ top: "env(safe-area-inset-top, 0px)" }}>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-full border border-noir/10 bg-cream/85 py-2 pl-5 pr-2 shadow-[0_6px_24px_rgba(53,64,36,0.08)] backdrop-blur">
           <Link href="/" className="display text-2xl text-kombu">
             Soul<span className="text-moss">.</span>
@@ -134,7 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 sm:px-6 md:pb-12">{children}</main>
 
-      <nav className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 rounded-full border border-noir/10 bg-cream/95 p-1.5 shadow-[0_10px_30px_rgba(53,64,36,0.18)] backdrop-blur md:hidden print:hidden">
+      <nav style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }} className="fixed inset-x-3 z-30 grid grid-cols-5 rounded-full border border-noir/10 bg-cream/95 p-1.5 shadow-[0_10px_30px_rgba(53,64,36,0.18)] backdrop-blur md:hidden print:hidden">
         {NAV.map((n) => (
           <Link
             key={n.href}

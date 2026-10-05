@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { AiError } from "./ai";
+import { HandlerError } from "./handlers";
 import { requireUser } from "./supabase/server";
 
 type Handler = (body: Record<string, unknown>) => Promise<Response | unknown>;
@@ -16,7 +17,7 @@ export function aiRoute(handler: Handler) {
       const out = await handler(body);
       return out instanceof Response ? out : NextResponse.json(out);
     } catch (err) {
-      const status = err instanceof AiError ? err.status : 500;
+      const status = err instanceof AiError || err instanceof HandlerError ? err.status : 500;
       const message = err instanceof Error ? err.message : "Unexpected server error";
       return NextResponse.json({ error: message }, { status: status >= 400 ? status : 500 });
     }

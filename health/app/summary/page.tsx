@@ -6,6 +6,7 @@ import { recentChanges } from "@/lib/changes";
 import { useLoad } from "@/lib/client/useLoad";
 import { age, seriesByMarker } from "@/lib/context";
 import { criticalHits } from "@/lib/critical";
+import { saveFile } from "@/lib/client/files";
 import { getStore } from "@/lib/store";
 
 /** One printable page to bring to a doctor's appointment. */
@@ -19,6 +20,14 @@ export default function SummaryPage() {
   if (error || !data) return <ErrorBox onRetry={reload}>{error}</ErrorBox>;
 
   const { profile: p, series, review } = data;
+  const inClaude = Boolean((globalThis as { claude?: unknown }).claude);
+  /** Printing isn't possible inside claude.ai, so there the summary is saved as a standalone HTML file instead. */
+  function saveSummary() {
+    if (!inClaude) return window.print();
+    const body = document.getElementById("health-summary")?.innerHTML ?? "";
+    const css = "body{font:13px/1.5 system-ui,sans-serif;color:#111;max-width:760px;margin:24px auto;padding:0 16px}h1{font:28px Georgia,serif;color:#354024}h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#354024;border-bottom:2px solid #354024;padding-bottom:4px;margin-top:24px}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #ddd;padding:3px 6px;text-align:left}button,.print\\:hidden{display:none}";
+    saveFile(`health-summary-${new Date().toISOString().slice(0, 10)}.html`, `<!doctype html><meta charset="utf-8"><title>Health summary</title><style>${css}</style>${body}`, "text/html").catch(() => {});
+  }
   const flagged = series.filter((s) => s.latest.flag === "high" || s.latest.flag === "low");
   const changes = recentChanges(series);
   const critical = criticalHits(series.map((s) => s.latest));
@@ -30,10 +39,10 @@ export default function SummaryPage() {
   ].slice(0, 8);
 
   return (
-    <div className="mx-auto max-w-3xl rounded-3xl bg-white p-6 text-[13px] leading-relaxed text-black shadow-sm print:max-w-none print:rounded-none print:p-0 print:shadow-none sm:p-10">
+    <div id="health-summary" className="mx-auto max-w-3xl rounded-3xl bg-white p-6 text-[13px] leading-relaxed text-black shadow-sm print:max-w-none print:rounded-none print:p-0 print:shadow-none sm:p-10">
       <div className="mb-6 flex items-start justify-between gap-4 print:hidden">
-        <p className="text-sm text-noir/70">A one-page summary of your results to bring to an appointment. Print it or save as PDF.</p>
-        <Button onClick={() => window.print()}>Print / PDF</Button>
+        <p className="text-sm text-noir/70">A one-page summary of your results to bring to an appointment.</p>
+        <Button onClick={saveSummary}>{inClaude ? "Save as file" : "Print / PDF"}</Button>
       </div>
 
       <h1 className="display text-3xl text-kombu">Health summary</h1>

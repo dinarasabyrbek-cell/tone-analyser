@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { MUSCLE_IDS } from "@/lib/anatomy";
 
 export type BodyMode = "health" | "muscles";
@@ -111,8 +111,8 @@ export default function Body3D(props: Body3DProps) {
     const home = { pos: new THREE.Vector3(0, 0.95, 3.6), target: new THREE.Vector3(0, 0.9, 0) };
     api.current = { meshes, camera, controls, render, animateTo, home };
 
-    new GLTFLoader().load(
-      "/anatomy/body.glb",
+    loadModel(
+      (globalThis as { __SOUL_MODEL_URL__?: string }).__SOUL_MODEL_URL__ ?? "/anatomy/body.glb",
       (gltf) => {
         gltf.scene.traverse((o) => {
           const m = o as THREE.Mesh;
@@ -281,4 +281,21 @@ function applyMaterials(
     if (selected) mat.emissive.set("#3a3a20");
     mat.needsUpdate = true;
   }
+}
+
+/** Loads the GLB; a `.b64.txt` URL holds the same bytes base64-encoded (for hosts that only serve text). */
+function loadModel(url: string, onLoad: (g: GLTF) => void, onProgress: (e: ProgressEvent) => void, onError: () => void) {
+  if (!url.endsWith(".b64.txt")) return new GLTFLoader().load(url, onLoad, onProgress, onError);
+  fetch(url)
+    .then((r) => {
+      if (!r.ok) throw new Error(String(r.status));
+      return r.text();
+    })
+    .then((b64) => {
+      const bin = atob(b64.trim());
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      new GLTFLoader().parse(bytes.buffer, "", onLoad, onError);
+    })
+    .catch(onError);
 }

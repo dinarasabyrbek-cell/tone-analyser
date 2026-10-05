@@ -15,7 +15,7 @@ export type NewResult = Omit<LabResult, "id" | "report_id">;
 
 /** Everything the UI needs from persistence. Implemented by Supabase (cloud) and localStorage (demo). */
 export interface Store {
-  mode: "cloud" | "demo";
+  mode: "cloud" | "demo" | "account";
 
   getProfile(): Promise<Profile>;
   saveProfile(p: Profile): Promise<void>;

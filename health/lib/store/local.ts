@@ -1,4 +1,4 @@
-// Demo store: keeps everything in this browser's localStorage. Used when Supabase isn't configured.
+// Key-value store: everything as JSON per key. Backed by localStorage (local mode) or the artifact db (claude.ai).
 import { EMPTY_PROFILE } from "../types";
 import type { ChatMessage, FoodEntry, HealthReview, LabReport, LabResult, PlanItem, Profile, WaterLog, WorkoutEntry } from "../types";
 import type { NewResult, Store } from "./types";
@@ -6,7 +6,39 @@ import type { NewResult, Store } from "./types";
 const PREFIX = "soul-health:";
 const KEYS = ["profile", "reports", "results", "reviews", "plan", "food", "water", "workouts", "chat"] as const;
 
-/** Full local backup as JSON (everything in this browser). */
+/** Synchronous key → JSON value storage. The store logic below runs on any backend. */
+export interface KV {
+  get(key: string): unknown;
+  set(key: string, value: unknown): void;
+  remove(key: string): void;
+}
+
+export const localStorageKV: KV = {
+  get(key) {
+    try {
+      const raw = localStorage.getItem(PREFIX + key);
+      return raw ? JSON.parse(raw) : undefined;
+    } catch {
+      return undefined;
+    }
+  },
+  set(key, value) {
+    try {
+      localStorage.setItem(PREFIX + key, JSON.stringify(value));
+    } catch (e) {
+      throw new Error("Browser storage is full or blocked: " + (e as Error).message);
+    }
+  },
+  remove(key) {
+    try {
+      localStorage.removeItem(PREFIX + key);
+    } catch {}
+  },
+};
+
+let kv: KV = localStorageKV;
+
+/** Full backup as JSON (everything the store holds). */
 export function exportLocal(): string {
   const data: Record<string, unknown> = { app: "soul-health", version: 1, exported_at: new Date().toISOString() };
   for (const k of KEYS) data[k] = read(k, null);
@@ -18,26 +50,18 @@ export function importLocal(json: string) {
   const data = JSON.parse(json);
   if (data?.app !== "soul-health") throw new Error("This file isn't a Soul Health backup.");
   for (const k of KEYS) {
-    if (data[k] === null || data[k] === undefined) localStorage.removeItem(PREFIX + k);
+    if (data[k] === null || data[k] === undefined) kv.remove(k);
     else write(k, data[k]);
   }
 }
 
 function read<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(PREFIX + key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
+  const v = kv.get(key);
+  return v === undefined || v === null ? fallback : (v as T);
 }
 
 function write<T>(key: string, value: T) {
-  try {
-    localStorage.setItem(PREFIX + key, JSON.stringify(value));
-  } catch (e) {
-    throw new Error("Browser storage is full or blocked: " + (e as Error).message);
-  }
+  kv.set(key, value);
 }
 
 export const uid = () =>
@@ -48,8 +72,14 @@ export const uid = () =>
 const now = () => new Date().toISOString();
 
 export function createLocalStore(): Store {
+  return createKVStore(localStorageKV, "demo");
+}
+
+/** The store over any KV backend (only one store is active per page). */
+export function createKVStore(backend: KV, mode: Store["mode"]): Store {
+  kv = backend;
   return {
-    mode: "demo",
+    mode,
 
     async getProfile() {
       return { ...EMPTY_PROFILE, ...read<Partial<Profile>>("profile", {}) };

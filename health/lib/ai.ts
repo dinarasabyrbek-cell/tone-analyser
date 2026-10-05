@@ -108,3 +108,15 @@ export async function streamText(model: string, messages: AiMessage[]): Promise<
     },
   });
 }
+
+/** OpenRouter-backed implementation of the shared `Ask` interface (see lib/handlers.ts). */
+export const serverAsk: import("./handlers").Ask = async (req) => {
+  const parts: ContentPart[] = [];
+  if (req.pdf) parts.push({ type: "file", file: { filename: req.pdf.name.endsWith(".pdf") ? req.pdf.name : req.pdf.name + ".pdf", file_data: req.pdf.dataUrl } });
+  for (const url of req.images ?? []) parts.push({ type: "image_url", image_url: { url } });
+  parts.push({ type: "text", text: req.text });
+  return complete(req.tier === "complex" ? MODEL_DEEP : MODEL_FAST, [
+    { role: "system", content: req.system },
+    { role: "user", content: parts.length === 1 ? req.text : parts },
+  ], { ...(req.maxTokens ? { max_tokens: req.maxTokens } : {}), ...(req.temperature != null ? { temperature: req.temperature } : {}) });
+};

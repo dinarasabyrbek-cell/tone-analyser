@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import type { ComponentProps, ReactNode } from "react";
+import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 
 export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(" ");
@@ -183,5 +185,34 @@ export function Disclaimer() {
       <br />
       Out-of-range or worrying results should always be discussed with a clinician.
     </p>
+  );
+}
+
+/** Two-step button: the first tap arms it ("Tap again to …"), the second runs the action. Replaces confirm(). */
+export function ConfirmButton({
+  onConfirm,
+  children,
+  confirmLabel,
+  className,
+}: {
+  onConfirm: () => void;
+  children: ReactNode;
+  confirmLabel: string;
+  className?: string;
+}) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
+  return (
+    <button
+      type="button"
+      onClick={() => (armed ? (setArmed(false), onConfirm()) : setArmed(true))}
+      className={cx(className, armed && "font-semibold !text-alert")}
+    >
+      {armed ? confirmLabel : children}
+    </button>
   );
 }

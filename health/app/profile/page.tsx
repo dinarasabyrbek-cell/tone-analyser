@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Leaf } from "@/components/Shapes";
 import { Button, Card, Disclaimer, ErrorBox, Field, Loading, PageHeader } from "@/components/ui";
 import { getStatus, PASSCODE_KEY, type AppStatus } from "@/lib/client/api";
+import { saveFile } from "@/lib/client/files";
 import { useLoad } from "@/lib/client/useLoad";
 import { waterTarget } from "@/lib/context";
 import { getStore } from "@/lib/store";
@@ -122,7 +123,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
         </Button>
       </div>
 
-      {status && !status.cloud && <BackupCard />}
+      {status && !status.cloud && <BackupCard account={status.storage === "account"} />}
       {status?.passcode && <PasscodeCard />}
 
       {status && (
@@ -164,19 +165,18 @@ function PasscodeCard() {
 }
 
 /** Local mode keeps everything in this browser — this lets the user keep and restore a copy. */
-function BackupCard() {
+function BackupCard({ account }: { account: boolean }) {
   const [msg, setMsg] = useState<string | null>(null);
-  function download() {
-    const blob = new Blob([exportLocal()], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `soul-health-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    setMsg("Backup downloaded. Keep it somewhere private — it contains your health data.");
+  async function download() {
+    try {
+      await saveFile(`soul-health-backup-${new Date().toISOString().slice(0, 10)}.json`, exportLocal(), "application/json");
+      setMsg("Backup saved. Keep it somewhere private — it contains your health data.");
+    } catch {
+      setMsg("The download was cancelled.");
+    }
   }
+  const [pending, setPending] = useState<File | null>(null);
   async function restore(file: File) {
-    if (!confirm("Replace everything in this browser with the backup?")) return;
     try {
       importLocal(await file.text());
       setMsg("Restored. Reloading…");
@@ -191,15 +191,28 @@ function BackupCard() {
         Backup <em className="!text-kombu">& restore</em>
       </p>
       <p className="text-sm text-noir/75">
-        Your data lives only in this browser. Clearing site data or switching phones loses it — download a backup now and then, and restore it on another device.
+        {account
+          ? "Your data is saved privately to your Claude account. A backup file is an extra copy you control."
+          : "Your data lives only in this browser. Clearing site data or switching phones loses it — download a backup now and then, and restore it on another device."}
       </p>
       <div className="flex flex-wrap gap-2">
         <Button onClick={download}>Download backup</Button>
         <label className="inline-flex cursor-pointer items-center justify-center rounded-full border border-kombu/40 px-5 py-2.5 text-sm font-semibold uppercase tracking-wider text-kombu">
           Restore
-          <input type="file" accept="application/json,.json" hidden onChange={(e) => e.target.files?.[0] && restore(e.target.files[0])} />
+          <input type="file" accept="application/json,.json" hidden onChange={(e) => e.target.files?.[0] && setPending(e.target.files[0])} />
         </label>
       </div>
+      {pending && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-cream/80 p-3 text-sm">
+          <span>Replace everything here with “{pending.name}”?</span>
+          <Button onClick={() => restore(pending)} className="!px-4 !py-1.5 !text-xs">
+            Replace
+          </Button>
+          <Button variant="ghost" onClick={() => setPending(null)} className="!px-4 !py-1.5 !text-xs">
+            Cancel
+          </Button>
+        </div>
+      )}
       {msg && <p className="text-sm text-kombu">{msg}</p>}
     </Card>
   );

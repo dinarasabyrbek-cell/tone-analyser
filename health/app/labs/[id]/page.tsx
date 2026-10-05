@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FlagChip } from "@/components/markers";
-import { Button, Card, ErrorBox, Field, Loading, PageHeader } from "@/components/ui";
+import { Button, Card, ConfirmButton, ErrorBox, Field, Loading, PageHeader } from "@/components/ui";
 import { getBiomarker } from "@/lib/biomarkers";
 import { useLoad } from "@/lib/client/useLoad";
 import { finalizeRow, type DraftRow } from "@/lib/normalize";
@@ -82,7 +82,6 @@ function Editor({ id, report, results }: { id: string; report: LabReport; result
   }
 
   async function remove() {
-    if (!confirm("Delete this report and all its results?")) return;
     await store.deleteReport(id);
     router.push("/labs");
   }
@@ -169,9 +168,9 @@ function Editor({ id, report, results }: { id: string; report: LabReport; result
       )}
 
       <div className="sticky bottom-24 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-full bg-cream/90 p-2 shadow-[0_6px_24px_rgba(53,64,36,0.12)] backdrop-blur md:bottom-4">
-        <Button variant="ghost" onClick={remove} className="!text-alert">
+        <ConfirmButton onConfirm={remove} confirmLabel="Tap again to delete report" className="rounded-full px-5 py-2.5 text-sm font-semibold uppercase tracking-wider text-alert">
           Delete
-        </Button>
+        </ConfirmButton>
         <Button onClick={save} loading={saving}>
           {reviewing ? `Save ${rows.length} results` : "Save changes"}
         </Button>

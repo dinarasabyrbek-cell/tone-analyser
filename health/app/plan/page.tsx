@@ -6,6 +6,7 @@ import { Button, Card, Chip, Disclaimer, ErrorBox, Loading, PageHeader, cx } fro
 import { getBiomarker } from "@/lib/biomarkers";
 import { postJSON } from "@/lib/client/api";
 import { loadContext } from "@/lib/client/data";
+import { saveFile } from "@/lib/client/files";
 import { useLoad } from "@/lib/client/useLoad";
 import { seriesByMarker } from "@/lib/context";
 import { baselinePlan, frequencyLabel, planStatus, sortPlan } from "@/lib/plan";
@@ -36,12 +37,7 @@ function downloadIcs(item: PlanItem, date: string) {
     "END:VEVENT",
     "END:VCALENDAR",
   ].join("\r\n");
-  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${item.name.replace(/[^\w]+/g, "-").toLowerCase()}.ics`;
-  a.click();
-  URL.revokeObjectURL(url);
+  saveFile(`${item.name.replace(/[^\w]+/g, "-").toLowerCase()}.ics`, ics, "text/calendar").catch(() => {});
 }
 
 export default function PlanPage() {

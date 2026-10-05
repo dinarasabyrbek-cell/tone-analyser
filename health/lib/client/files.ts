@@ -46,3 +46,22 @@ export async function thumbnail(file: Blob, side = 240): Promise<string> {
 }
 
 export const MAX_PDF_BYTES = 3.2 * 1024 * 1024;
+
+/** Offers a generated file to the user: through Claude's download prompt when running on claude.ai, else a normal download. */
+export async function saveFile(filename: string, data: string, type: string): Promise<void> {
+  const blob = new Blob([data], { type });
+  const rt = (globalThis as { claude?: { use(n: string): Promise<unknown> } }).claude;
+  if (rt?.use) {
+    const downloads = (await rt.use("downloads").catch(() => null)) as { save(f: { filename: string; data: Blob }): Promise<unknown> } | null;
+    if (downloads) {
+      await downloads.save({ filename, data: blob });
+      return;
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

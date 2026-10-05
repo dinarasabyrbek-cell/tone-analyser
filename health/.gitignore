@@ -43,3 +43,4 @@ next-env.d.ts
 
 # anatomy build cache
 /.anatomy-cache
+/dist-artifact

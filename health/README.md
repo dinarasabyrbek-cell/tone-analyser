@@ -16,6 +16,15 @@ A personal health tracker. Upload your lab results (PDFs or photos, any year, an
 
 > Not a medical device. It explains and tracks; it always points you to a doctor for out-of-range or worrying results.
 
+## Use it on claude.ai (no API key, no hosting)
+
+`npm run build:claude` builds `dist-artifact/`: one self-contained page plus the 3D model, published as a Claude artifact. In that version:
+- AI runs on the **viewer's own Claude account** (artifact `sample` capability). You get no API key and no bill.
+- Data is saved privately to the viewer's Claude account (artifact `db`, in a private per-user area). It falls back to browser storage.
+- PDFs are turned into page images in the browser before Claude reads them.
+
+The same pages and logic are shared with the Next.js app. `artifact/` only holds the in-memory router, shims for `next/*`, and adapters for AI and storage.
+
 ## Run locally
 
 ```bash

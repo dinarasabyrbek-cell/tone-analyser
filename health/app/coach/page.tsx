@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Markdown } from "@/components/Markdown";
 import { Pebbles } from "@/components/Shapes";
-import { Button, ErrorBox, Loading, cx } from "@/components/ui";
+import { Button, ConfirmButton, ErrorBox, Loading, cx } from "@/components/ui";
 import { postStream } from "@/lib/client/api";
 import { loadContext } from "@/lib/client/data";
 import { useLoad } from "@/lib/client/useLoad";
@@ -70,7 +70,6 @@ function Coach() {
   }
 
   async function clear() {
-    if (!confirm("Clear the whole conversation?")) return;
     await store.clearMessages();
     setMessages([]);
   }
@@ -84,9 +83,9 @@ function Coach() {
           Your <em>coach</em>
         </h1>
         {!empty && (
-          <button onClick={clear} className="text-xs text-noir/50 underline">
+          <ConfirmButton onConfirm={clear} confirmLabel="Tap again to clear" className="text-xs text-noir/50 underline">
             Clear chat
-          </button>
+          </ConfirmButton>
         )}
       </div>
 
