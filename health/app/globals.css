@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+/* Palette: Café Noir · Kombu · Moss · Tan · Bone, plus cream/sage surfaces */
+@theme {
+  --color-noir: #4c3d19;
+  --color-kombu: #354024;
+  --color-kombu-700: #2a331c;
+  --color-moss: #889063;
+  --color-moss-300: #b4ba92;
+  --color-tan: #cfbb99;
+  --color-bone: #e5d7c4;
+  --color-cream: #f7f1e6;
+  --color-sage: #d9dcb4;
+  --color-sage-100: #ecedd6;
+  --color-lime: #d6dc8a;
+  --color-alert: #b5643c;
+  --color-alert-100: #f1dccd;
+
+  --font-serif: var(--font-fraunces), "Georgia", serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-4xl: 2rem;
+  --radius-5xl: 2.5rem;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: var(--color-cream);
+  color: var(--color-noir);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Serif headline with an italic accent word: <h1 class="display">Your <em>health</em> today</h1> */
+.display {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+.display em {
+  font-style: italic;
+  color: var(--color-moss);
+}
+
+/* Soft sculpted shapes used on step cards and the hero */
+.blob {
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%),
+    radial-gradient(circle at 70% 80%, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0) 55%), currentColor;
+  box-shadow: inset -6px -8px 18px rgba(0, 0, 0, 0.12), 0 10px 24px rgba(53, 64, 36, 0.18);
+}
+
+.glass {
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95), rgba(247, 241, 230, 0.82) 60%, rgba(229, 215, 196, 0.75));
+  box-shadow: 0 30px 60px rgba(53, 64, 36, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset -10px -16px 40px rgba(136, 144, 99, 0.18);
+}
+
+.hero-bg {
+  background: radial-gradient(120% 80% at 50% 0%, #f7f1e6 0%, rgba(247, 241, 230, 0) 55%),
+    radial-gradient(70% 60% at 15% 90%, #889063 0%, rgba(136, 144, 99, 0) 70%),
+    radial-gradient(60% 60% at 90% 70%, #6b7548 0%, rgba(107, 117, 72, 0) 70%),
+    linear-gradient(180deg, #d9dcb4 0%, #a9b07f 55%, #5f6a3f 100%);
+}
+
+.rays {
+  background: repeating-conic-gradient(from 0deg at 50% 0%, rgba(53, 64, 36, 0.07) 0deg 0.6deg, transparent 0.6deg 7deg);
+}
+
+.prose-ai p {
+  margin: 0.5rem 0;
+}
+.prose-ai ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+.prose-ai ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+.prose-ai strong {
+  font-weight: 600;
+}
+.prose-ai h3 {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  margin-top: 0.75rem;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.field {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid rgba(76, 61, 25, 0.18);
+  background: #fffaf2;
+  padding: 0.7rem 1rem;
+  color: var(--color-noir);
+  outline: none;
+}
+.field:focus {
+  border-color: var(--color-moss);
+  box-shadow: 0 0 0 3px rgba(136, 144, 99, 0.25);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin-slow 0.9s linear infinite;
+}
