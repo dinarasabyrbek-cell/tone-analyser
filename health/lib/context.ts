@@ -1,6 +1,7 @@
 // Builds the compact "about me" text that every AI call receives. Pure functions — usable on client and server.
 import { BIOMARKERS, getBiomarker, SYSTEMS } from "./biomarkers";
-import type { FoodEntry, HealthReview, MealResult, Profile, ResultPoint, WaterLog } from "./types";
+import { workoutsText } from "./training";
+import type { FoodEntry, HealthReview, MealResult, Profile, ResultPoint, WaterLog, WorkoutEntry } from "./types";
 
 export interface MarkerSeries {
   key: string;
@@ -112,6 +113,7 @@ export function buildContext(opts: {
   results: ResultPoint[];
   food?: FoodEntry[];
   water?: WaterLog[];
+  workouts?: WorkoutEntry[];
   review?: HealthReview | null;
 }): string {
   const series = seriesByMarker(opts.results);
@@ -125,6 +127,7 @@ export function buildContext(opts: {
   if (opts.food || opts.water) {
     parts.push("# Food & water", foodText(opts.food ?? [], opts.water ?? [], waterTarget(opts.profile)));
   }
+  if (opts.workouts) parts.push("# Training", workoutsText(opts.workouts));
   if (opts.review) {
     parts.push(`# Last overall review (${opts.review.created_at.slice(0, 10)})`, opts.review.headline, opts.review.summary);
   }

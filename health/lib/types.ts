@@ -138,3 +138,22 @@ export interface ChatMessage {
   content: string;
   created_at: string;
 }
+
+export interface WorkoutMuscle {
+  id: string; // muscle mesh id, see lib/anatomy.ts
+  role: "primary" | "secondary";
+}
+
+export interface WorkoutEntry {
+  id: string;
+  done_at: string; // ISO
+  text: string; // what the user typed
+  title: string;
+  kind: "strength" | "cardio" | "mobility" | "sport" | "other";
+  minutes: number | null;
+  intensity: 1 | 2 | 3; // easy / moderate / hard
+  kcal: number | null;
+  muscles: WorkoutMuscle[];
+  exercises: string[];
+  note: string;
+}

@@ -10,6 +10,9 @@ import { postJSON } from "@/lib/client/api";
 import { loadContext, startOfToday } from "@/lib/client/data";
 import { useLoad } from "@/lib/client/useLoad";
 import { seriesByMarker, waterTarget } from "@/lib/context";
+import { organStatuses, STATUS_COLORS } from "@/lib/bodyStatus";
+import { recentChanges } from "@/lib/changes";
+import { criticalHits } from "@/lib/critical";
 import { baselinePlan, planStatus } from "@/lib/plan";
 import { getStore } from "@/lib/store";
 import type { HealthReview, SystemStatus } from "@/lib/types";
@@ -51,6 +54,10 @@ export default function Dashboard() {
     .sort((a, b) => a.st.daysLeft - b.st.daysLeft)
     .slice(0, 3);
   const hasProfile = Boolean(data.profile.birth_year || data.profile.sex);
+  const critical = criticalHits(series.map((s) => s.latest));
+  const changes = recentChanges(series).slice(0, 6);
+  const organs = [...organStatuses(series, review).values()];
+  const needCare = organs.filter((o) => o.status === "attention" || o.status === "watch");
   const stale = review && data.results.some((r) => r.taken_at > review.created_at.slice(0, 10));
 
   async function refreshReview() {
@@ -75,6 +82,23 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col gap-10">
+      {critical.length > 0 && (
+        <div role="alert" className="-mb-4 rounded-3xl border-2 border-alert bg-alert-100 p-5 text-alert">
+          <p className="display text-2xl">Please contact a doctor today</p>
+          <p className="mt-1 text-sm">
+            {critical.length === 1 ? "This result is" : "These results are"} in a range labs usually treat as urgent. If you feel unwell — chest pain, fainting,
+            confusion, severe weakness — seek urgent care now.
+          </p>
+          <ul className="mt-2 list-disc pl-5 text-sm font-semibold">
+            {critical.map((c) => (
+              <li key={c.key}>
+                {c.name}: {c.value} ({c.direction}) on {c.taken_at}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs">If this was a typo in the uploaded values, fix it in Labs.</p>
+        </div>
+      )}
       {/* Hero */}
       <section className="hero-bg relative overflow-hidden rounded-5xl px-5 pb-8 pt-10 sm:px-10 sm:pb-12 sm:pt-14">
         <div className="relative z-10 flex flex-col items-center text-center">
@@ -198,6 +222,53 @@ export default function Dashboard() {
           </div>
         </section>
       )}
+
+      {/* What changed */}
+      {changes.length > 0 && (
+        <section>
+          <Display as="h2" className="mb-5">
+            What <em>changed</em>
+          </Display>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {changes.map((c) => (
+              <Link key={c.key} href={`/markers/${c.key}`} className="flex items-center justify-between gap-3 rounded-3xl bg-[#fffaf2] px-4 py-3 hover:bg-bone/50">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{c.name}</p>
+                  <p className="text-xs text-noir/60">
+                    {c.from} → {c.to}
+                  </p>
+                </div>
+                <Chip tone={c.kind === "new_flag" ? "alert" : c.kind === "resolved" ? "moss" : "tan"}>
+                  {c.kind === "new_flag" ? "Newly out of range" : c.kind === "resolved" ? "Back in range" : `${c.pct > 0 ? "↑" : "↓"} ${Math.abs(c.pct)}%`}
+                </Chip>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Body map teaser */}
+      <Link href="/body" className="hero-bg group relative flex items-center justify-between gap-4 overflow-hidden rounded-5xl px-6 py-7 sm:px-10">
+        <div>
+          <p className="display text-3xl text-kombu sm:text-4xl">
+            Explore your <em>body</em>
+          </p>
+          <p className="mt-2 max-w-md text-sm text-noir/75">
+            {needCare.length
+              ? `Tap an organ in 3D to see what's going on: ${needCare.map((o) => o.organ.name).join(", ")}.`
+              : "A 3D map of your organs and muscles, coloured by your results and workouts."}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {needCare.slice(0, 4).map((o) => (
+              <span key={o.organ.id} className="flex items-center gap-1.5 rounded-full bg-cream/85 px-2.5 py-1 text-xs">
+                <span className="h-2 w-2 rounded-full" style={{ background: STATUS_COLORS[o.status] }} />
+                {o.organ.name}
+              </span>
+            ))}
+          </div>
+        </div>
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-kombu text-cream transition group-hover:scale-105">→</span>
+      </Link>
 
       {/* Body systems */}
       {review && review.systems.length > 0 && (

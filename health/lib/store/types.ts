@@ -8,6 +8,7 @@ import type {
   Profile,
   ResultPoint,
   WaterLog,
+  WorkoutEntry,
 } from "../types";
 
 export type NewResult = Omit<LabResult, "id" | "report_id">;
@@ -40,6 +41,10 @@ export interface Store {
   listWater(sinceISO: string): Promise<WaterLog[]>;
   addWater(ml: number): Promise<WaterLog>;
   deleteWater(id: string): Promise<void>;
+
+  listWorkouts(sinceISO?: string): Promise<WorkoutEntry[]>;
+  addWorkout(w: Omit<WorkoutEntry, "id">): Promise<WorkoutEntry>;
+  deleteWorkout(id: string): Promise<void>;
 
   listMessages(): Promise<ChatMessage[]>;
   addMessage(m: Omit<ChatMessage, "id" | "created_at">): Promise<ChatMessage>;

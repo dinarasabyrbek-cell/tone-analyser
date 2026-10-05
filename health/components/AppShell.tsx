@@ -9,13 +9,21 @@ import { cx } from "./ui";
 
 const NAV = [
   { href: "/", label: "Today", icon: "M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" },
+  { href: "/body", label: "Body", icon: "M12 2.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM5 9.5h14M9 9.5v12M15 9.5v12M9 15h6" },
   { href: "/labs", label: "Labs", icon: "M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3M7 15h10" },
   { href: "/food", label: "Food", icon: "M4 12h16a8 8 0 0 1-16 0ZM8 8c0-2 2-2 2-4M12 8c0-2 2-2 2-4M16 8c0-2 2-2 2-4" },
-  { href: "/plan", label: "Plan", icon: "M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm4 9 2 2 4-4" },
   { href: "/coach", label: "Coach", icon: "M4 5h16v11H9l-5 4V5Zm4 5h8M8 13h5" },
 ];
 
-const MENU = [...NAV, { href: "/markers", label: "All markers", icon: "" }, { href: "/profile", label: "Profile", icon: "" }];
+const MENU = [
+  ...NAV,
+  { href: "/workouts", label: "Workouts", icon: "" },
+  { href: "/plan", label: "Test plan", icon: "" },
+  { href: "/markers", label: "All markers", icon: "" },
+  { href: "/summary", label: "Doctor summary", icon: "" },
+  { href: "/profile", label: "Profile & backup", icon: "" },
+];
+const DESKTOP = ["/", "/body", "/labs", "/food", "/workouts", "/plan", "/coach"];
 
 function isActive(path: string, href: string) {
   return href === "/" ? path === "/" : path.startsWith(href);
@@ -50,28 +58,28 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
       {status && !status.cloud && (
-        <div className="bg-kombu px-4 py-1.5 text-center text-[11px] text-cream/85">
-          Demo mode — data stays in this browser. Connect Supabase to sync privately across devices.
+        <div className="bg-kombu px-4 py-1.5 text-center text-[11px] text-cream/85 print:hidden">
+          Private local mode — your data stays on this device. Use Profile → Backup to keep a copy.
         </div>
       )}
       {status && !status.ai && (
-        <div className="bg-alert-100 px-4 py-1.5 text-center text-[11px] text-alert">
+        <div className="bg-alert-100 px-4 py-1.5 text-center text-[11px] text-alert print:hidden">
           AI is not connected yet — add OPENROUTER_API_KEY on the server to enable analysis.
         </div>
       )}
 
-      <header className="sticky top-0 z-30 px-3 pt-3 sm:px-6">
+      <header className="sticky top-0 z-30 px-3 pt-3 sm:px-6 print:hidden">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-full border border-noir/10 bg-cream/85 py-2 pl-5 pr-2 shadow-[0_6px_24px_rgba(53,64,36,0.08)] backdrop-blur">
           <Link href="/" className="display text-2xl text-kombu">
             Soul<span className="text-moss">.</span>
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
-            {MENU.slice(0, 5).map((n) => (
+          <nav className="hidden items-center gap-0.5 lg:flex">
+            {MENU.filter((n) => DESKTOP.includes(n.href)).map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
                 className={cx(
-                  "rounded-full px-3.5 py-1.5 text-sm transition",
+                  "rounded-full px-3 py-1.5 text-sm transition",
                   isActive(path, n.href) ? "bg-kombu text-cream" : "text-noir/75 hover:bg-kombu/5"
                 )}
               >
@@ -80,7 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/profile" className="hidden rounded-full border border-kombu/30 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-kombu md:inline-block">
+            <Link href="/profile" className="hidden rounded-full border border-kombu/30 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-kombu xl:inline-block">
               Profile
             </Link>
             <Link href="/labs?upload=1" className="hidden rounded-full bg-kombu px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-cream md:inline-block">
@@ -89,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               onClick={() => setOpen(true)}
               aria-label="Open menu"
-              className="grid h-9 w-11 place-items-center rounded-full bg-moss/80 text-cream md:hidden"
+              className="grid h-9 w-11 place-items-center rounded-full bg-moss/80 text-cream lg:hidden"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
                 <path d="M5 8h14M5 12h14M5 16h9" />
@@ -126,7 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 sm:px-6 md:pb-12">{children}</main>
 
-      <nav className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 rounded-full border border-noir/10 bg-cream/95 p-1.5 shadow-[0_10px_30px_rgba(53,64,36,0.18)] backdrop-blur md:hidden">
+      <nav className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 rounded-full border border-noir/10 bg-cream/95 p-1.5 shadow-[0_10px_30px_rgba(53,64,36,0.18)] backdrop-blur md:hidden print:hidden">
         {NAV.map((n) => (
           <Link
             key={n.href}

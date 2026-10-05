@@ -1,9 +1,27 @@
 // Demo store: keeps everything in this browser's localStorage. Used when Supabase isn't configured.
 import { EMPTY_PROFILE } from "../types";
-import type { ChatMessage, FoodEntry, HealthReview, LabReport, LabResult, PlanItem, Profile, WaterLog } from "../types";
+import type { ChatMessage, FoodEntry, HealthReview, LabReport, LabResult, PlanItem, Profile, WaterLog, WorkoutEntry } from "../types";
 import type { NewResult, Store } from "./types";
 
 const PREFIX = "soul-health:";
+const KEYS = ["profile", "reports", "results", "reviews", "plan", "food", "water", "workouts", "chat"] as const;
+
+/** Full local backup as JSON (everything in this browser). */
+export function exportLocal(): string {
+  const data: Record<string, unknown> = { app: "soul-health", version: 1, exported_at: new Date().toISOString() };
+  for (const k of KEYS) data[k] = read(k, null);
+  return JSON.stringify(data, null, 2);
+}
+
+/** Restores a backup made with exportLocal(), replacing current data. */
+export function importLocal(json: string) {
+  const data = JSON.parse(json);
+  if (data?.app !== "soul-health") throw new Error("This file isn't a Soul Health backup.");
+  for (const k of KEYS) {
+    if (data[k] === null || data[k] === undefined) localStorage.removeItem(PREFIX + k);
+    else write(k, data[k]);
+  }
+}
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -119,6 +137,20 @@ export function createLocalStore(): Store {
     },
     async deleteWater(id) {
       write("water", read<WaterLog[]>("water", []).filter((w) => w.id !== id));
+    },
+
+    async listWorkouts(since) {
+      return read<WorkoutEntry[]>("workouts", [])
+        .filter((w) => !since || w.done_at >= since)
+        .sort((a, b) => b.done_at.localeCompare(a.done_at));
+    },
+    async addWorkout(w) {
+      const entry = { ...w, id: uid() };
+      write("workouts", [...read<WorkoutEntry[]>("workouts", []), entry]);
+      return entry;
+    },
+    async deleteWorkout(id) {
+      write("workouts", read<WorkoutEntry[]>("workouts", []).filter((w) => w.id !== id));
     },
 
     async listMessages() {

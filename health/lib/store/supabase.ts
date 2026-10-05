@@ -1,7 +1,7 @@
 // Cloud store: Supabase Postgres + Storage. Row-Level Security limits every row to its owner.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { EMPTY_PROFILE } from "../types";
-import type { ChatMessage, FoodEntry, HealthReview, LabReport, LabResult, PlanItem, Profile, WaterLog } from "../types";
+import type { ChatMessage, FoodEntry, HealthReview, LabReport, LabResult, PlanItem, Profile, WaterLog, WorkoutEntry } from "../types";
 import type { NewResult, Store } from "./types";
 import { uid } from "./local";
 
@@ -124,6 +124,18 @@ export function createSupabaseStore(sb: SupabaseClient): Store {
     },
     async deleteWater(id) {
       check(await sb.from("water_logs").delete().eq("id", id));
+    },
+
+    async listWorkouts(since) {
+      let q = sb.from("workouts").select("*").order("done_at", { ascending: false }).limit(300);
+      if (since) q = q.gte("done_at", since);
+      return check(await q) as WorkoutEntry[];
+    },
+    async addWorkout(w) {
+      return check(await sb.from("workouts").insert({ ...w, user_id: await me() }).select("*").single()) as WorkoutEntry;
+    },
+    async deleteWorkout(id) {
+      check(await sb.from("workouts").delete().eq("id", id));
     },
 
     async listMessages() {

@@ -99,3 +99,14 @@ export const ReceiptSchema = z.object({
   swaps: arr(z.object({ from: str, to: str, why: str })),
   missing: strList,
 });
+
+export const WorkoutSchema = z.object({
+  title: str,
+  kind: z.enum(["strength", "cardio", "mobility", "sport", "other"]).catch("other"),
+  minutes: looseNumber.catch(null),
+  intensity: looseNumber.transform((n) => (n === 1 || n === 3 ? n : 2) as 1 | 2 | 3),
+  kcal: looseNumber.catch(null),
+  muscles: arr(z.object({ id: z.string(), role: z.enum(["primary", "secondary"]).catch("primary") })),
+  exercises: strList,
+  note: str,
+});

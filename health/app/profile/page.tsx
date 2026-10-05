@@ -7,6 +7,7 @@ import { getStatus, PASSCODE_KEY, type AppStatus } from "@/lib/client/api";
 import { useLoad } from "@/lib/client/useLoad";
 import { waterTarget } from "@/lib/context";
 import { getStore } from "@/lib/store";
+import { exportLocal, importLocal } from "@/lib/store/local";
 import type { Profile } from "@/lib/types";
 
 const numOrNull = (v: string) => (v.trim() === "" || !Number.isFinite(Number(v)) ? null : Number(v));
@@ -121,6 +122,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
         </Button>
       </div>
 
+      {status && !status.cloud && <BackupCard />}
       {status?.passcode && <PasscodeCard />}
 
       {status && (
@@ -157,6 +159,48 @@ function PasscodeCard() {
           }}
         />
       </Field>
+    </Card>
+  );
+}
+
+/** Local mode keeps everything in this browser — this lets the user keep and restore a copy. */
+function BackupCard() {
+  const [msg, setMsg] = useState<string | null>(null);
+  function download() {
+    const blob = new Blob([exportLocal()], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `soul-health-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setMsg("Backup downloaded. Keep it somewhere private — it contains your health data.");
+  }
+  async function restore(file: File) {
+    if (!confirm("Replace everything in this browser with the backup?")) return;
+    try {
+      importLocal(await file.text());
+      setMsg("Restored. Reloading…");
+      setTimeout(() => location.reload(), 600);
+    } catch (e) {
+      setMsg((e as Error).message);
+    }
+  }
+  return (
+    <Card tone="sage" className="mt-8 flex flex-col gap-3 sm:max-w-xl">
+      <p className="display text-2xl">
+        Backup <em className="!text-kombu">& restore</em>
+      </p>
+      <p className="text-sm text-noir/75">
+        Your data lives only in this browser. Clearing site data or switching phones loses it — download a backup now and then, and restore it on another device.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={download}>Download backup</Button>
+        <label className="inline-flex cursor-pointer items-center justify-center rounded-full border border-kombu/40 px-5 py-2.5 text-sm font-semibold uppercase tracking-wider text-kombu">
+          Restore
+          <input type="file" accept="application/json,.json" hidden onChange={(e) => e.target.files?.[0] && restore(e.target.files[0])} />
+        </label>
+      </div>
+      {msg && <p className="text-sm text-kombu">{msg}</p>}
     </Card>
   );
 }

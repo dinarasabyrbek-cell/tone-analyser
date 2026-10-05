@@ -16,12 +16,13 @@ export function daysAgo(n: number): string {
 /** Loads everything the AI needs and returns the context text. */
 export async function loadContext(opts: { food?: boolean; review?: boolean } = {}) {
   const store = getStore();
-  const [profile, results, food, water, review] = await Promise.all([
+  const [profile, results, food, water, review, workouts] = await Promise.all([
     store.getProfile(),
     store.listResults(),
     opts.food === false ? Promise.resolve(undefined) : store.listFood(daysAgo(7)),
     opts.food === false ? Promise.resolve(undefined) : store.listWater(daysAgo(7)),
     opts.review === false ? Promise.resolve(null) : store.latestReview(),
+    store.listWorkouts(daysAgo(14)),
   ]);
-  return { profile, results, context: buildContext({ profile, results, food, water, review }) };
+  return { profile, results, context: buildContext({ profile, results, food, water, workouts, review }) };
 }
